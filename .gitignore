@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# Runtime and private evidence
+.env
+*.db
+*.db-shm
+*.db-wal
+storage/originals/**
+!storage/originals/.gitkeep
+storage/derivatives/**
+!storage/derivatives/.gitkeep
+storage/reports/**
+!storage/reports/.gitkeep
+storage/exports/**
+!storage/exports/.gitkeep
+logs/
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
