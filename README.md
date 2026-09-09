@@ -21,7 +21,7 @@ The application is educational decision-support software. It is not a stalking t
 - Python 3.12 or newer
 - Node.js 22 or newer and npm 10 or newer
 - Google Chrome for the local Playwright workflow (CI installs Chromium)
-- Optional: GTK runtime if native WeasyPrint dependencies are unavailable on Windows. IMAGE TRACE retains a minimal ReportLab fallback, but WeasyPrint is the intended renderer.
+- Optional: GTK runtime for WeasyPrint on Windows. Without it, IMAGE TRACE automatically uses its complete paginated ReportLab renderer.
 
 ## Quick start - Windows PowerShell
 
@@ -37,6 +37,8 @@ cd ../..
 ```
 
 Open <http://127.0.0.1:5173>. API documentation is at <http://127.0.0.1:8000/api/docs>.
+
+For an exact pre-resolved Python environment, install `apps/backend/requirements.lock` before the editable package.
 
 ## Quick start - macOS or Linux
 
@@ -60,7 +62,7 @@ Generate or refresh the deterministic 20-image fixture:
 .\apps\backend\.venv\Scripts\python.exe .\scripts\generate_fixture.py
 ```
 
-The committed fixture includes 14 synthetic-coordinate images, six without GPS, two declared camera groups, an editing-software tag example, a deliberately rapid synthetic transition, and duplicate examples. It depicts no person and asserts no real-world event. See [demo script](docs/demo-script.md).
+The committed fixture includes 14 synthetic-coordinate images, six without GPS, two declared camera groups, editing-software and timestamp-discrepancy examples, a deliberately rapid synthetic transition, and duplicate examples. It depicts no person and asserts no real-world event. See [demo script](docs/demo-script.md).
 
 ## Quality checks
 
@@ -92,4 +94,3 @@ The React/Vite client uses TanStack Query for server state, TanStack Table and r
 - [Demo script](docs/demo-script.md)
 
 Licensed under the MIT License.
-

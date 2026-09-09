@@ -17,5 +17,4 @@ Timestamp selection follows the documented priority and records the original str
 - `MISSING_GPS` states only that usable coordinates are absent.
 - `CAMERA_SOURCE_CHANGE` compares adjacent reported make/model groups.
 
-Every rerun creates a new analysis and new findings. Historical runs and human review events are not rewritten.
-
+Every rerun creates a new analysis and new findings. Historical runs and human review events are not rewritten. The timestamp-discrepancy rule compares parseable embedded wall-clock fields and flags the largest difference only when it exceeds the stored run threshold (300 seconds by default); incomplete timezone context is stated in the result rather than inferred away.

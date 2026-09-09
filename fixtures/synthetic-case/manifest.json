@@ -19,8 +19,10 @@
       "synthetic-03.jpg",
       "synthetic-20.jpg"
     ],
+    "timestamp_discrepancy": "synthetic-06.jpg",
     "minimum_finding_rules": [
       "TIMESTAMP_SOURCE_FALLBACK",
+      "TIMESTAMP_DISCREPANCY",
       "EDITING_SOFTWARE_PRESENT",
       "IMPLAUSIBLE_TRAVEL",
       "MISSING_GPS",
@@ -66,7 +68,7 @@
       "gps_expected": true,
       "timestamp": "2026-01-15T09:00:00+00:00",
       "editing_software_example": true,
-      "sha256": "b49ae69ca2e8354f20d2f7554cafa3d6b024020eff88d1b470222d1bb7abc482"
+      "sha256": "b9ed66cfee0942cc841f8a7bcdcac7a9f6ed63da6387e922b40f3de3a398d060"
     },
     {
       "filename": "synthetic-06.jpg",
@@ -74,7 +76,7 @@
       "gps_expected": true,
       "timestamp": "2026-01-15T09:15:00+00:00",
       "editing_software_example": false,
-      "sha256": "30b16383c275414ba5b062c89a5bbf62a577b09d08202cc9c2d247b5e70498cd"
+      "sha256": "ee7f5740523fd60bbb93e6fb3e2df1468d1ab39ca6d170933905440739f06234"
     },
     {
       "filename": "synthetic-07.jpg",
@@ -135,10 +137,10 @@
     {
       "filename": "synthetic-14.jpg",
       "camera_group": "B",
-      "gps_expected": true,
+      "gps_expected": false,
       "timestamp": "2026-01-15T11:15:00+00:00",
       "editing_software_example": false,
-      "sha256": "05968964175274d8f480d96058239f7ff5449ff7ab0eab49671b472313263766"
+      "sha256": "efcc6df81f2f14abe4143818697e73e17163965ee8a552d2540038ee03c81249"
     },
     {
       "filename": "synthetic-15.jpg",
@@ -174,18 +176,20 @@
     },
     {
       "filename": "synthetic-19.jpg",
-      "camera_group": "B",
-      "gps_expected": false,
-      "timestamp": "2026-01-15T12:30:00+00:00",
+      "camera_group": "A",
+      "gps_expected": true,
+      "timestamp": "2026-01-15T08:15:00+00:00",
       "editing_software_example": false,
+      "exact_duplicate_of": "synthetic-02.jpg",
       "sha256": "90c6e10272dba5b7ad415fcf0ffad180418e5393d74096f551d0b0a80fee3cee"
     },
     {
       "filename": "synthetic-20.jpg",
-      "camera_group": "B",
+      "camera_group": null,
       "gps_expected": false,
-      "timestamp": "2026-01-15T12:45:00+00:00",
+      "timestamp": null,
       "editing_software_example": false,
+      "near_duplicate_of": "synthetic-03.jpg",
       "sha256": "b3ff206625b85306e1a4f2e861c627e12333617aa5e7e97f8c6b17591f538450"
     }
   ]

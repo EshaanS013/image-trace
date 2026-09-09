@@ -120,6 +120,9 @@ def register_upload(db: Session, case: Case, upload: UploadFile, actor: str) -> 
         metadata = extract_metadata(destination, modified, case.case_timezone)
         evidence.metadata_record = metadata
         db.add(evidence)
+        # Establish the evidence row before the append-only custody event while
+        # retaining both writes inside the same transaction.
+        db.flush()
         db.add(
             CustodyEvent(
                 case_id=case.id,

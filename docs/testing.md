@@ -6,6 +6,8 @@ Backend tests cover chunked hashes, empty and streamed content, GPS conversion, 
 
 Frontend tests cover case listing, essential navigation, and theme behavior. The Playwright workflow creates a case, uploads generated evidence, inspects raw metadata, runs analysis, records a qualified finding review, re-verifies integrity, generates a report, and downloads the PDF.
 
+Release verification also renders the generated A4 PDF to PNG and inspects every page for clipping, overlap, missing sections, and unreadable text. Both full npm dependency trees are audited, and `pip check` validates the resolved Python environment.
+
 ## Commands
 
 Use the exact commands in `README.md` or `AGENTS.md`. CI runs Python 3.12 and Node 22 on Ubuntu. Local verification was performed on Python 3.13 and Node 22 on Windows.
@@ -13,4 +15,3 @@ Use the exact commands in `README.md` or `AGENTS.md`. CI runs Python 3.12 and No
 ## Security checks
 
 Run `npm audit --omit=dev` for shipped frontend dependencies and `python -m pip check` for Python dependency consistency. Development-tool advisories are documented when they cannot affect the built browser bundle.
-

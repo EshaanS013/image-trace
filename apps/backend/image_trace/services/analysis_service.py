@@ -9,8 +9,9 @@ from image_trace import __version__
 
 from ..models import AnalysisRun, EvidenceFile, Finding
 from .geo_service import haversine_km, speed_kmh
+from .timeline_service import parse_exif_datetime
 
-RULE_SET_VERSION = "1.0.0"
+RULE_SET_VERSION = "1.1.0"
 RULE_VERSION = "1.0"
 
 
@@ -95,6 +96,49 @@ def run_analysis(db: Session, case_id: str, configuration: dict[str, object]) ->
                     "reason": meta.timestamp_selection_reason,
                 },
             )
+        timestamp_values = {
+            "DateTimeOriginal": meta.datetime_original_raw,
+            "DateTimeDigitized": meta.datetime_digitized_raw,
+            "GPSDateTime": meta.gps_datetime_raw,
+        }
+        parsed_timestamps = {
+            label: parsed.replace(tzinfo=None)
+            for label, raw in timestamp_values.items()
+            if raw and (parsed := parse_exif_datetime(raw)) is not None
+        }
+        discrepancy_config = configuration.get("timestamp_discrepancy_seconds", 300)
+        discrepancy_threshold = (
+            float(discrepancy_config)
+            if isinstance(discrepancy_config, int | float | str)
+            else 300.0
+        )
+        timestamp_pairs = [
+            (left_label, right_label, abs((left - right).total_seconds()))
+            for left_index, (left_label, left) in enumerate(parsed_timestamps.items())
+            for right_label, right in list(parsed_timestamps.items())[left_index + 1 :]
+        ]
+        if timestamp_pairs:
+            left_label, right_label, delta_seconds = max(timestamp_pairs, key=lambda pair: pair[2])
+            if delta_seconds > discrepancy_threshold:
+                add_finding(
+                    db,
+                    run,
+                    item,
+                    "TIMESTAMP_DISCREPANCY",
+                    "time",
+                    "review",
+                    "Embedded timestamps differ beyond the configured threshold",
+                    (
+                        "Two reported timestamp fields differ in wall-clock time. Timezone context "
+                        "may be incomplete, so qualified review is required."
+                    ),
+                    {
+                        "fields": [left_label, right_label],
+                        "values": [timestamp_values[left_label], timestamp_values[right_label]],
+                        "difference_seconds": delta_seconds,
+                        "threshold_seconds": discrepancy_threshold,
+                    },
+                )
         if meta.software and (
             matched := next((p for p in patterns if p in meta.software.lower()), None)
         ):

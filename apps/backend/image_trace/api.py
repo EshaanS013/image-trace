@@ -126,7 +126,7 @@ def create_case(payload: CaseCreate, db: Db) -> Case:
     return case
 
 
-@router.get("/cases")
+@router.get("/cases", response_model=None)
 def list_cases(
     db: Db,
     page: int = Query(1, ge=1),

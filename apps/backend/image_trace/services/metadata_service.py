@@ -46,6 +46,10 @@ def extract_metadata(
         for key, value in exif.items():
             name = ExifTags.TAGS.get(key, str(key))
             named[name] = safe_value(value)
+        if hasattr(ExifTags, "IFD") and exif:
+            for key, value in exif.get_ifd(ExifTags.IFD.Exif).items():
+                name = ExifTags.TAGS.get(key, str(key))
+                named[name] = safe_value(value)
         gps_raw = exif.get_ifd(ExifTags.IFD.GPSInfo) if hasattr(ExifTags, "IFD") and exif else {}
         gps = {ExifTags.GPSTAGS.get(key, str(key)): value for key, value in gps_raw.items()}
         try:

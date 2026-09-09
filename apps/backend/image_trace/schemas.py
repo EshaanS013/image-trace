@@ -108,6 +108,7 @@ class NoteCreate(BaseModel):
 
 class AnalysisCreate(BaseModel):
     travel_speed_threshold_kmh: float = Field(default=1000, ge=1, le=50000)
+    timestamp_discrepancy_seconds: float = Field(default=300, ge=1, le=86400)
     editor_patterns: list[str] = Field(default=["photoshop", "gimp", "lightroom"])
 
 

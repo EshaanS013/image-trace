@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 
 from image_trace.database import get_db
@@ -17,6 +17,13 @@ def db(tmp_path: Path) -> Generator[Session, None, None]:
     engine = create_engine(
         f"sqlite:///{tmp_path / 'test.db'}", connect_args={"check_same_thread": False}
     )
+
+    @event.listens_for(engine, "connect")
+    def enable_foreign_keys(connection: object, _record: object) -> None:
+        cursor = connection.cursor()  # type: ignore[attr-defined]
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
     Base.metadata.create_all(engine)
     session = sessionmaker(bind=engine, expire_on_commit=False)()
     storage.root = (tmp_path / "storage").resolve()
