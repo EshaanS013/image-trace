@@ -1,8 +1,95 @@
 # IMAGE TRACE
 
-IMAGE TRACE is a local-first workspace for preserving image evidence, inspecting metadata, reconstructing qualified timelines and routes, reviewing explainable findings, and producing versioned reports.
+IMAGE TRACE is a local-first workspace for preserving image evidence, inspecting raw and normalized metadata, reconstructing qualified timelines and routes, reviewing explainable findings, and producing versioned PDF reports with separate SHA-256 manifests.
 
-> Initial repository setup is in progress. See `EXECUTION_CHECKLIST.md` for current status.
+The application is educational decision-support software. It is not a stalking tool, surveillance platform, authenticity oracle, or court-certified forensic suite. Use synthetic or consented evidence only. Missing metadata is not suspicious by itself, and metadata tags do not establish authenticity or manipulation.
 
-IMAGE TRACE is educational decision-support software, not a stalking tool, surveillance platform, authenticity oracle, or court-certified forensic suite. Use synthetic or consented evidence only.
+## What works
+
+- Case creation, status changes, archive, and reopen through a versioned REST API
+- Batch JPEG, PNG, WebP, and TIFF intake with decode, MIME, extension, size, pixel, and path validation
+- Immutable controlled originals, streamed SHA-256 acquisition hashes, derived WebP thumbnails, and custody events
+- Searchable virtualized evidence inventory with normalized/raw metadata, notes, review state, and keyboard navigation
+- Explicit timestamp source, original value, timezone status, confidence, and selection reason
+- Shared evidence selection across inventory, chronology, offline coordinate route, and findings
+- Immutable analysis runs with versioned transparent rules and auditable review transitions
+- On-demand integrity re-verification, printable HTML preview, PDF generation, and SHA-256 sidecar manifest
+- Independent light/dark tokens and responsive desktop, tablet, and narrow layouts
+
+## Prerequisites
+
+- Python 3.12 or newer
+- Node.js 22 or newer and npm 10 or newer
+- Google Chrome for the local Playwright workflow (CI installs Chromium)
+- Optional: GTK runtime if native WeasyPrint dependencies are unavailable on Windows. IMAGE TRACE retains a minimal ReportLab fallback, but WeasyPrint is the intended renderer.
+
+## Quick start - Windows PowerShell
+
+```powershell
+cd apps/backend
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe -m alembic upgrade head
+cd ../frontend
+npm ci
+cd ../..
+.\scripts\dev.ps1
+```
+
+Open <http://127.0.0.1:5173>. API documentation is at <http://127.0.0.1:8000/api/docs>.
+
+## Quick start - macOS or Linux
+
+```bash
+cd apps/backend
+python3 -m venv .venv
+.venv/bin/python -m pip install -e ".[dev]"
+.venv/bin/python -m alembic upgrade head
+cd ../frontend
+npm ci
+cd ../..
+chmod +x scripts/dev.sh
+./scripts/dev.sh
+```
+
+## Synthetic demonstration
+
+Generate or refresh the deterministic 20-image fixture:
+
+```powershell
+.\apps\backend\.venv\Scripts\python.exe .\scripts\generate_fixture.py
+```
+
+The committed fixture includes 14 synthetic-coordinate images, six without GPS, two declared camera groups, an editing-software tag example, a deliberately rapid synthetic transition, and duplicate examples. It depicts no person and asserts no real-world event. See [demo script](docs/demo-script.md).
+
+## Quality checks
+
+```powershell
+cd apps/backend
+.\.venv\Scripts\python.exe -m ruff check .
+.\.venv\Scripts\python.exe -m mypy image_trace
+.\.venv\Scripts\python.exe -m pytest
+cd ../frontend
+npm run lint
+npm run typecheck
+npm test -- --run
+npm run build
+cd ../../tests/e2e
+npm ci
+npx playwright test
+```
+
+## Architecture
+
+The React/Vite client uses TanStack Query for server state, TanStack Table and row virtualization for evidence, React Router for case workspaces, and accessible Radix primitives for consequential overlays and metadata tabs. FastAPI routes remain thin over SQLAlchemy-backed domain services. SQLite runs in WAL mode; evidence bytes live under controlled storage roots and are never served as frontend static files. See [architecture](docs/architecture.md), [data model](docs/data-model.md), and [API guide](docs/api.md).
+
+## Documentation
+
+- [Methodology](docs/methodology.md)
+- [Threat model](docs/threat-model.md)
+- [Limitations](docs/limitations.md)
+- [Testing](docs/testing.md)
+- [Demo script](docs/demo-script.md)
+
+Licensed under the MIT License.
 
