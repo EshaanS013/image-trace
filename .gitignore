@@ -13,6 +13,7 @@ dist/
 coverage/
 playwright-report/
 test-results/
+work/
 
 # Runtime and private evidence
 .env
@@ -34,4 +35,3 @@ logs/
 Thumbs.db
 .idea/
 .vscode/
-

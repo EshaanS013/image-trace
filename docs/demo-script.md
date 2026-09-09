@@ -13,3 +13,15 @@
 
 The controlled mismatch test exists only in an isolated automated test directory. Production exposes no mutation action.
 
+## Recorded walkthrough
+
+With the local servers running, capture the browser walkthrough frames with:
+
+```powershell
+cd tests/e2e
+npx playwright test demo-capture.spec.ts --project=chromium
+cd ../..
+.\apps\backend\.venv\Scripts\python.exe scripts\build_demo_gif.py work\demo-frames outputs\image-trace-demo.gif
+```
+
+The walkthrough covers the case registry, overview, evidence inventory, raw metadata, findings, privacy-safe route map, and versioned reports.
