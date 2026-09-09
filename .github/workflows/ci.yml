@@ -1,0 +1,46 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/backend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python -m pip install -e ".[dev]"
+      - run: python -m ruff check .
+      - run: python -m mypy image_trace
+      - run: python -m alembic upgrade head
+      - run: python -m pytest
+  frontend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/frontend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: apps/frontend/package-lock.json }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test -- --run
+      - run: npm run build
+  e2e:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: tests/e2e } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: python -m venv ../../apps/backend/.venv && ../../apps/backend/.venv/bin/python -m pip install -e "../../apps/backend[dev]"
+      - run: npm ci --prefix ../../apps/frontend
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test --project=chromium
+
