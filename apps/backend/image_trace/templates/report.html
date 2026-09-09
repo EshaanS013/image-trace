@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>IMAGE TRACE report</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm 18mm; @bottom-right { content: "Page " counter(page) " of " counter(pages); color: #52606d; font-size: 9pt; } }
+    body { font: 10pt Arial, sans-serif; color: #17212b; line-height: 1.45; }
+    h1 { font-size: 25pt; margin: 0 0 3mm; }
+    h2 { font-size: 15pt; border-bottom: 1px solid #cbd5e1; padding-bottom: 2mm; margin-top: 8mm; }
+    .eyebrow { color: #315d8a; font-weight: 700; letter-spacing: .08em; }
+    .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 8mm; background: #f1f5f9; padding: 5mm; border-radius: 3mm; }
+    table { border-collapse: collapse; width: 100%; font-size: 8pt; table-layout: fixed; }
+    th, td { border-bottom: 1px solid #d8e0e8; padding: 2mm; vertical-align: top; overflow-wrap: anywhere; }
+    th { text-align: left; background: #e8eef5; }
+    .hash { font: 7pt Consolas, monospace; }
+    .notice { border-left: 3px solid #c58a17; padding: 3mm 4mm; background: #fff8e8; }
+    footer { margin-top: 9mm; color: #52606d; }
+    tr { break-inside: avoid; }
+  </style>
+</head>
+<body>
+  <div class="eyebrow">IMAGE TRACE / VERSIONED ANALYSIS REPORT</div>
+  <h1>{{ case.name }}</h1>
+  <div class="meta">
+    <div><b>Case</b><br>{{ case.case_number }}</div><div><b>Analyst</b><br>{{ case.analyst_name }}</div>
+    <div><b>Analysis run</b><br>{{ run.id }}</div><div><b>Rule set</b><br>{{ run.rule_set_version }}</div>
+    <div><b>Application</b><br>{{ application_version }}</div><div><b>Build</b><br>{{ run.build_commit }}</div>
+  </div>
+  <h2>Scope and methodology</h2>
+  <p>{{ case.description or "No additional scope description supplied." }}</p>
+  <p>IMAGE TRACE preserves registered originals, computes SHA-256 acquisition hashes, extracts available image metadata, selects timestamps using a documented priority, and applies transparent versioned rules. Derived routes and speeds use selected coordinates and timestamps.</p>
+  <div class="notice"><b>Qualified review required.</b> Automated results are indicators requiring qualified human review. Missing metadata is not suspicious by itself, and metadata tags do not establish authenticity or manipulation.</div>
+  <h2>Evidence inventory</h2>
+  <p>{{ evidence|length }} item(s); {{ location_count }} with usable GPS metadata. {% if redact_coordinates %}Coordinates are redacted in this report.{% else %}Coordinates are included where available.{% endif %}</p>
+  <table><thead><tr><th>Evidence</th><th>Filename</th><th>Selected time</th><th>Source</th><th>Integrity</th><th>Acquisition SHA-256</th></tr></thead><tbody>
+  {% for item in evidence %}<tr><td>{{ item.evidence_id }}</td><td>{{ item.original_filename }}</td><td>{{ item.metadata_record.timeline_timestamp_raw or "-" }}</td><td>{{ item.metadata_record.timeline_timestamp_source }}</td><td>{{ item.integrity_status }}</td><td class="hash">{{ item.sha256_acquisition }}</td></tr>{% endfor %}
+  </tbody></table>
+  <h2>Findings and review</h2>
+  <table><thead><tr><th>Severity</th><th>Rule</th><th>Finding</th><th>Explanation</th><th>Review state</th></tr></thead><tbody>
+  {% for item in findings %}<tr><td>{{ item.severity }}</td><td>{{ item.rule_id }} v{{ item.rule_version }}</td><td>{{ item.title }}</td><td>{{ item.explanation }}</td><td>{{ item.reviewer_status }}</td></tr>{% else %}<tr><td colspan="5">No automated findings were generated for this analysis run.</td></tr>{% endfor %}
+  </tbody></table>
+  <h2>Chain of custody</h2>
+  <table><thead><tr><th>Time</th><th>Event</th><th>Actor</th><th>Evidence</th></tr></thead><tbody>
+  {% for item in custody %}<tr><td>{{ item.timestamp }}</td><td>{{ item.event_type }}</td><td>{{ item.actor }}</td><td>{{ item.evidence_file_id or "case" }}</td></tr>{% endfor %}
+  </tbody></table>
+  <h2>Limitations</h2>
+  <p>Metadata may be missing, inaccurate, altered by ordinary software, or stripped during transfer. A matching hash verifies byte identity with the acquired copy, not the truth of image content. Camera grouping relies on reported metadata. Location and travel values are derived, not observations.</p>
+  <footer>Generated {{ generated_at }} | Report bound to analysis run {{ run.id }}</footer>
+</body>
+</html>

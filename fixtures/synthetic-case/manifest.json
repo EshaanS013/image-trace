@@ -1,0 +1,192 @@
+{
+  "generator_version": "1.0.0",
+  "synthetic_only": true,
+  "coordinate_policy": "Synthetic coordinates for testing; not tied to depicted people or events.",
+  "expected": {
+    "image_count": 20,
+    "gps_count": 14,
+    "camera_groups": 2,
+    "editing_software_examples": 1,
+    "implausible_transition": [
+      "synthetic-10.jpg",
+      "synthetic-11.jpg"
+    ],
+    "exact_duplicate": [
+      "synthetic-02.jpg",
+      "synthetic-19.jpg"
+    ],
+    "near_duplicate": [
+      "synthetic-03.jpg",
+      "synthetic-20.jpg"
+    ],
+    "minimum_finding_rules": [
+      "TIMESTAMP_SOURCE_FALLBACK",
+      "EDITING_SOFTWARE_PRESENT",
+      "IMPLAUSIBLE_TRAVEL",
+      "MISSING_GPS",
+      "CAMERA_SOURCE_CHANGE"
+    ]
+  },
+  "files": [
+    {
+      "filename": "synthetic-01.jpg",
+      "camera_group": "A",
+      "gps_expected": true,
+      "timestamp": "2026-01-15T08:00:00+00:00",
+      "editing_software_example": false,
+      "sha256": "d4d4cbba0cc7fcd69d6d2626c1f300ad71abe503e57aa850875661a2fef3cb90"
+    },
+    {
+      "filename": "synthetic-02.jpg",
+      "camera_group": "A",
+      "gps_expected": true,
+      "timestamp": "2026-01-15T08:15:00+00:00",
+      "editing_software_example": false,
+      "sha256": "90c6e10272dba5b7ad415fcf0ffad180418e5393d74096f551d0b0a80fee3cee"
+    },
+    {
+      "filename": "synthetic-03.jpg",
+      "camera_group": "A",
+      "gps_expected": true,
+      "timestamp": "2026-01-15T08:30:00+00:00",
+      "editing_software_example": false,
+      "sha256": "57f17abf6638ab49f592f600b1ef41176b5dd43155abc65366b27f3e368efa2e"
+    },
+    {
+      "filename": "synthetic-04.jpg",
+      "camera_group": "A",
+      "gps_expected": true,
+      "timestamp": "2026-01-15T08:45:00+00:00",
+      "editing_software_example": false,
+      "sha256": "0b35c21435d9d6059761ace14ea8f178d19b578d7d7e1acb99544f88515851c5"
+    },
+    {
+      "filename": "synthetic-05.jpg",
+      "camera_group": "A",
+      "gps_expected": true,
+      "timestamp": "2026-01-15T09:00:00+00:00",
+      "editing_software_example": true,
+      "sha256": "b49ae69ca2e8354f20d2f7554cafa3d6b024020eff88d1b470222d1bb7abc482"
+    },
+    {
+      "filename": "synthetic-06.jpg",
+      "camera_group": "A",
+      "gps_expected": true,
+      "timestamp": "2026-01-15T09:15:00+00:00",
+      "editing_software_example": false,
+      "sha256": "30b16383c275414ba5b062c89a5bbf62a577b09d08202cc9c2d247b5e70498cd"
+    },
+    {
+      "filename": "synthetic-07.jpg",
+      "camera_group": "A",
+      "gps_expected": true,
+      "timestamp": "2026-01-15T09:30:00+00:00",
+      "editing_software_example": false,
+      "sha256": "4e2b1cb1c378f90141dfd70e48ef1909f00d2e78e8d1e30969b06d49b0b4bed4"
+    },
+    {
+      "filename": "synthetic-08.jpg",
+      "camera_group": "A",
+      "gps_expected": true,
+      "timestamp": "2026-01-15T09:45:00+00:00",
+      "editing_software_example": false,
+      "sha256": "d9dbfbf7dddcf55bee39a02d20d9b25eeefd2339883b43a056190186b4de367a"
+    },
+    {
+      "filename": "synthetic-09.jpg",
+      "camera_group": "A",
+      "gps_expected": true,
+      "timestamp": "2026-01-15T10:00:00+00:00",
+      "editing_software_example": false,
+      "sha256": "d0161fc7f9b1daa3b6cd8cfca281ea871303d21aa2d41b61991805cf85565c33"
+    },
+    {
+      "filename": "synthetic-10.jpg",
+      "camera_group": "A",
+      "gps_expected": true,
+      "timestamp": "2026-01-15T10:15:00+00:00",
+      "editing_software_example": false,
+      "sha256": "c050a1f370bd212b288bc9fa8ef5db8e1a44e0a1e3ecde7c5aabdd3635e27185"
+    },
+    {
+      "filename": "synthetic-11.jpg",
+      "camera_group": "B",
+      "gps_expected": true,
+      "timestamp": "2026-01-15T10:30:00+00:00",
+      "editing_software_example": false,
+      "sha256": "c6d77cee25a21ea32401fafd5969151440e08fc46366d92901840d6208856128"
+    },
+    {
+      "filename": "synthetic-12.jpg",
+      "camera_group": "B",
+      "gps_expected": true,
+      "timestamp": "2026-01-15T10:45:00+00:00",
+      "editing_software_example": false,
+      "sha256": "7770615b1752715d0b990f58a5a7ef20bfbfe5ac3f60dd6158759597047821ab"
+    },
+    {
+      "filename": "synthetic-13.jpg",
+      "camera_group": "B",
+      "gps_expected": true,
+      "timestamp": "2026-01-15T11:00:00+00:00",
+      "editing_software_example": false,
+      "sha256": "1b5c8df678a914ccd6726a0405bec982acde53d8093e3afb46b4064bfafa7cfa"
+    },
+    {
+      "filename": "synthetic-14.jpg",
+      "camera_group": "B",
+      "gps_expected": true,
+      "timestamp": "2026-01-15T11:15:00+00:00",
+      "editing_software_example": false,
+      "sha256": "05968964175274d8f480d96058239f7ff5449ff7ab0eab49671b472313263766"
+    },
+    {
+      "filename": "synthetic-15.jpg",
+      "camera_group": "B",
+      "gps_expected": false,
+      "timestamp": "2026-01-15T11:30:00+00:00",
+      "editing_software_example": false,
+      "sha256": "09409e7f21e9828cb3682828effeeac2c68bb6cb0c5ae7e03568fcc567b084d3"
+    },
+    {
+      "filename": "synthetic-16.jpg",
+      "camera_group": "B",
+      "gps_expected": false,
+      "timestamp": "2026-01-15T11:45:00+00:00",
+      "editing_software_example": false,
+      "sha256": "bd99105d13a5c9122f02f8a764972fc425a3f3a7da49c0e1a78e93831c1add4e"
+    },
+    {
+      "filename": "synthetic-17.jpg",
+      "camera_group": "B",
+      "gps_expected": false,
+      "timestamp": "2026-01-15T12:00:00+00:00",
+      "editing_software_example": false,
+      "sha256": "b27d539c8d6e69e2ed1a32c561bc74156c3e892e2ef60bf01c43d392b2761f6c"
+    },
+    {
+      "filename": "synthetic-18.jpg",
+      "camera_group": "B",
+      "gps_expected": false,
+      "timestamp": "2026-01-15T12:15:00+00:00",
+      "editing_software_example": false,
+      "sha256": "2ecb556570ba4274f3ff4f8e29309a4c6f5d97d290068ca505b8348f655bef86"
+    },
+    {
+      "filename": "synthetic-19.jpg",
+      "camera_group": "B",
+      "gps_expected": false,
+      "timestamp": "2026-01-15T12:30:00+00:00",
+      "editing_software_example": false,
+      "sha256": "90c6e10272dba5b7ad415fcf0ffad180418e5393d74096f551d0b0a80fee3cee"
+    },
+    {
+      "filename": "synthetic-20.jpg",
+      "camera_group": "B",
+      "gps_expected": false,
+      "timestamp": "2026-01-15T12:45:00+00:00",
+      "editing_software_example": false,
+      "sha256": "b3ff206625b85306e1a4f2e861c627e12333617aa5e7e97f8c6b17591f538450"
+    }
+  ]
+}
