@@ -360,6 +360,9 @@ code,
   transform: translateY(-1px);
   box-shadow: var(--shadow);
 }
+.case-card-link { display:flex; flex:1; flex-direction:column; color:inherit; }
+.case-delete-button { display:inline-flex; align-items:center; justify-content:center; gap:6px; margin-top:14px; padding:8px 10px; border:1px solid color-mix(in srgb,var(--danger) 45%,var(--line)); border-radius:8px; background:transparent; color:var(--danger); font-weight:700; cursor:pointer; }
+.case-delete-button:hover { background:var(--danger-soft); }
 .case-card-head,
 .case-card-foot {
   display: flex;

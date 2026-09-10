@@ -1,45 +1,725 @@
 import * as Tabs from "@radix-ui/react-tabs";
-import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, type ColumnDef, type SortingState } from "@tanstack/react-table";
+import {
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type SortingState,
+} from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDownUp, Check, ChevronLeft, ChevronRight, FileUp, Filter, MapPin, Search, ShieldCheck } from "lucide-react";
+import {
+  ArrowDownUp,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  FileUp,
+  Filter,
+  MapPin,
+  Search,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api";
-import { Button, Empty, ErrorState, Loading, Modal, Status, Toast, formatBytes, formatDate } from "../components";
+import {
+  Button,
+  Empty,
+  ErrorState,
+  Loading,
+  Modal,
+  Status,
+  Toast,
+  formatBytes,
+  formatDate,
+} from "../components";
 import { useWorkspace } from "../state";
 import type { Evidence } from "../types";
 
-export function EvidencePage(){
-  const {caseId=""}=useParams();const queryClient=useQueryClient();const {selectedId,setSelectedId,search,setSearch}=useWorkspace();const [params]=useSearchParams();
-  const [sorting,setSorting]=useState<SortingState>([]);const [activeView,setActiveView]=useState("All evidence");const [uploadOpen,setUploadOpen]=useState(false);const [files,setFiles]=useState<File[]>([]);const [toast,setToast]=useState("");const scrollRef=useRef<HTMLDivElement>(null);
-  const query=useQuery({queryKey:["evidence",caseId,search],queryFn:()=>api.evidence(caseId,search)});
-  const allItems=useMemo(()=>query.data?.items??[],[query.data?.items]);const views=["All evidence","Needs review","GPS available","Integrity issues"] as const;const items=useMemo(()=>allItems.filter(item=>activeView==="All evidence"||(activeView==="Needs review"&&item.review_status!=="reviewed")||(activeView==="GPS available"&&item.metadata.gps_latitude!==null)||(activeView==="Integrity issues"&&item.integrity_status==="mismatch")),[activeView,allItems]);useEffect(()=>{const requested=params.get("evidence");if(requested)setSelectedId(requested)},[params,setSelectedId]);useEffect(()=>{if((!selectedId||!items.some(item=>item.id===selectedId))&&items[0])setSelectedId(items[0].id)},[items,selectedId,setSelectedId]);
-  const selected=items.find(i=>i.id===selectedId)??null;
-  const upload=useMutation({mutationFn:()=>api.upload(caseId,files,"Local Analyst"),onSuccess:result=>{void queryClient.invalidateQueries({queryKey:["evidence",caseId]});setUploadOpen(false);setFiles([]);setToast(result.failures.length?`${result.accepted.length} accepted; ${result.failures.length} need attention`:`${result.accepted.length} evidence files preserved`)}});
-  const verify=useMutation({mutationFn:(id:string)=>api.verify(id,"Local Analyst"),onSuccess:()=>{void queryClient.invalidateQueries({queryKey:["evidence",caseId]});setToast("Integrity verification completed")}});
-  const review=useMutation({mutationFn:(id:string)=>api.reviewEvidence(id,"reviewed","Local Analyst"),onSuccess:()=>{void queryClient.invalidateQueries({queryKey:["evidence",caseId]});setToast("Evidence marked reviewed")}});
-  const columns=useMemo<ColumnDef<Evidence>[]>(()=>[
-    {id:"thumb",header:"",cell:({row})=><img className="table-thumb" src={`/api/v1/evidence/${row.original.id}/thumbnail`} alt=""/>},
-    {accessorKey:"evidence_id",header:"Evidence",cell:({row})=><div className="identity-cell"><strong>{row.original.evidence_id}</strong><span>{row.original.original_filename}</span></div>},
-    {id:"timestamp",accessorFn:row=>row.metadata.timeline_timestamp_utc??row.metadata.timeline_timestamp_raw??"",header:"Selected timestamp",cell:({row})=><div className="stack-cell"><span>{formatDate(row.original.metadata.timeline_timestamp_utc??row.original.metadata.timeline_timestamp_raw)}</span><small>{row.original.metadata.timeline_timestamp_source.replaceAll("_"," ")} · {row.original.metadata.timeline_timestamp_confidence}</small></div>},
-    {id:"camera",accessorFn:row=>[row.metadata.camera_make,row.metadata.camera_model].filter(Boolean).join(" "),header:"Camera",cell:({row})=><div className="stack-cell"><span>{[row.original.metadata.camera_make,row.original.metadata.camera_model].filter(Boolean).join(" ")||"Not reported"}</span><small>{row.original.metadata.lens_model||"Lens unavailable"}</small></div>},
-    {id:"gps",accessorFn:row=>row.metadata.gps_latitude!==null?1:0,header:"GPS",cell:({row})=>row.original.metadata.gps_latitude!==null?<span className="inline-icon"><MapPin size={14}/>Available</span>:<span className="muted">None</span>},
-    {accessorKey:"integrity_status",header:"Integrity",cell:({getValue})=><Status value={String(getValue())}/>},
-    {id:"findings",accessorFn:row=>row.finding_count,header:"Findings",cell:({row})=><span>{row.original.finding_count}{row.original.highest_severity&&<> · <Status value={row.original.highest_severity}/></>}</span>},
-    {accessorKey:"review_status",header:"Review",cell:({getValue})=><Status value={String(getValue())}/>},
-  ],[]);
-  const table=useReactTable({data:items,columns,state:{sorting},onSortingChange:setSorting,getCoreRowModel:getCoreRowModel(),getSortedRowModel:getSortedRowModel()});const rows=table.getRowModel().rows;
-  const virtual=useVirtualizer({count:rows.length,getScrollElement:()=>scrollRef.current,estimateSize:()=>58,overscan:8});const visible=virtual.getVirtualItems();const before=visible[0]?.start??0;const after=virtual.getTotalSize()-(visible.at(-1)?.end??0);
-  const move=(delta:number)=>{const index=items.findIndex(item=>item.id===selectedId);const next=items[Math.max(0,Math.min(items.length-1,index+delta))];if(next)setSelectedId(next.id)};
-  const cycleView=()=>setActiveView(current=>views[(views.indexOf(current as typeof views[number])+1)%views.length]??"All evidence");const cycleSort=()=>setSorting(current=>current[0]?.id!=="timestamp"?[{id:"timestamp",desc:false}]:current[0].desc?[]:[{id:"timestamp",desc:true}]);
-  useEffect(()=>{const handler=(event:KeyboardEvent)=>{if(event.key==="/"&&document.activeElement?.tagName!=="INPUT"){event.preventDefault();document.getElementById("evidence-search")?.focus()}if(event.key==="j")move(1);if(event.key==="k")move(-1)};window.addEventListener("keydown",handler);return()=>window.removeEventListener("keydown",handler)});
-  return <div className="workspace evidence-workspace"><div className="workspace-heading compact"><div><p className="eyebrow">EVIDENCE WORKSPACE</p><h1>Inventory & inspection</h1></div><Button icon={FileUp} onClick={()=>setUploadOpen(true)}>Add evidence</Button></div>
-    <div className="evidence-toolbar"><label className="search-box"><Search size={17}/><input id="evidence-search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search ID or filename"/><kbd>/</kbd></label><button className="tool-button" onClick={cycleView} title={`Current view: ${activeView}`}><Filter size={16}/>{activeView}</button><button className="tool-button" onClick={cycleSort} title="Cycle selected-timestamp sorting"><ArrowDownUp size={16}/>{sorting[0]?.id==="timestamp"?(sorting[0].desc?"Newest":"Oldest"):"Sort"}</button><span>{items.length} of {query.data?.total??0} items</span></div>
-    {query.isLoading?<Loading/>:query.error?<ErrorState message={query.error.message}/>:allItems.length===0?<Empty title={search?"No matching evidence":"No evidence registered"} body={search?"Try a different ID or filename.":"Upload a batch to validate image content, preserve originals, calculate acquisition hashes, and extract metadata."} action={!search?<Button icon={FileUp} onClick={()=>setUploadOpen(true)}>Add evidence</Button>:undefined}/>:<div className="evidence-layout"><aside className="filter-rail"><p className="eyebrow">SAVED VIEWS</p>{views.map(label=><button onClick={()=>setActiveView(label)} className={activeView===label?"active":""} aria-pressed={activeView===label} key={label}>{label}<span>{label==="All evidence"?allItems.length:label==="Needs review"?allItems.filter(i=>i.review_status!=="reviewed").length:label==="GPS available"?allItems.filter(i=>i.metadata.gps_latitude!==null).length:allItems.filter(i=>i.integrity_status==="mismatch").length}</span></button>)}</aside>
-      <div className="table-scroll" ref={scrollRef}><table className="evidence-table"><thead>{table.getHeaderGroups().map(group=><tr key={group.id}>{group.headers.map(header=><th key={header.id}><button onClick={header.column.getToggleSortingHandler()}>{flexRender(header.column.columnDef.header,header.getContext())}</button></th>)}</tr>)}</thead><tbody>{before>0&&<tr aria-hidden="true"><td style={{height:before}} colSpan={8}/></tr>}{visible.map(item=>{const row=rows[item.index];if(!row)return null;return <tr key={row.id} className={row.original.id===selectedId?"selected":""} onClick={()=>setSelectedId(row.original.id)} tabIndex={0} onKeyDown={e=>{if(e.key==="Enter")setSelectedId(row.original.id)}}>{row.getVisibleCells().map(cell=><td key={cell.id}>{flexRender(cell.column.columnDef.cell,cell.getContext())}</td>)}</tr>})}{after>0&&<tr aria-hidden="true"><td style={{height:after}} colSpan={8}/></tr>}</tbody></table></div>
-      <EvidenceInspector item={selected} onPrevious={()=>move(-1)} onNext={()=>move(1)} onVerify={()=>selected&&verify.mutate(selected.id)} onReview={()=>selected&&review.mutate(selected.id)}/></div>}
-    <Modal open={uploadOpen} onOpenChange={setUploadOpen} title="Add evidence" description="Accepted images are copied into controlled storage and never modified by product code."><div className="upload-zone"><input id="file-upload" type="file" accept="image/jpeg,image/png,image/webp,image/tiff" multiple onChange={e=>setFiles(Array.from(e.target.files??[]))}/><label htmlFor="file-upload"><FileUp size={25}/><strong>Select image files</strong><span>JPEG, PNG, WebP, or TIFF · up to 100 MiB each</span></label></div>{files.length>0&&<div className="file-queue"><strong>{files.length} selected</strong>{files.slice(0,5).map(file=><span key={file.name}>{file.name}<small>{formatBytes(file.size)}</small></span>)}</div>}{upload.error&&<ErrorState message={upload.error.message}/>}<div className="dialog-actions"><Button variant="secondary" onClick={()=>setUploadOpen(false)}>Cancel</Button><Button disabled={!files.length||upload.isPending} onClick={()=>upload.mutate()}>{upload.isPending?"Validating and preserving…":`Preserve ${files.length||""} files`}</Button></div></Modal>{toast&&<Toast message={toast} onClose={()=>setToast("")}/>}</div>;
+export function EvidencePage() {
+  const { caseId = "" } = useParams();
+  const queryClient = useQueryClient();
+  const { selectedId, setSelectedId, search, setSearch } = useWorkspace();
+  const [params] = useSearchParams();
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [activeView, setActiveView] = useState("All evidence");
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [toast, setToast] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Evidence | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const query = useQuery({
+    queryKey: ["evidence", caseId, search],
+    queryFn: () => api.evidence(caseId, search),
+  });
+  const allItems = useMemo(() => query.data?.items ?? [], [query.data?.items]);
+  const views = [
+    "All evidence",
+    "Needs review",
+    "GPS available",
+    "Integrity issues",
+  ] as const;
+  const items = useMemo(
+    () =>
+      allItems.filter(
+        (item) =>
+          activeView === "All evidence" ||
+          (activeView === "Needs review" &&
+            item.review_status !== "reviewed") ||
+          (activeView === "GPS available" &&
+            item.metadata.gps_latitude !== null) ||
+          (activeView === "Integrity issues" &&
+            item.integrity_status === "mismatch"),
+      ),
+    [activeView, allItems],
+  );
+  useEffect(() => {
+    const requested = params.get("evidence");
+    if (requested) setSelectedId(requested);
+  }, [params, setSelectedId]);
+  useEffect(() => {
+    if (
+      (!selectedId || !items.some((item) => item.id === selectedId)) &&
+      items[0]
+    )
+      setSelectedId(items[0].id);
+  }, [items, selectedId, setSelectedId]);
+  const selected = items.find((i) => i.id === selectedId) ?? null;
+  const upload = useMutation({
+    mutationFn: () => api.upload(caseId, files, "Local Analyst"),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: ["evidence", caseId] });
+      setUploadOpen(false);
+      setFiles([]);
+      setToast(
+        result.failures.length
+          ? `${result.accepted.length} accepted; ${result.failures.length} need attention`
+          : `${result.accepted.length} evidence files preserved`,
+      );
+    },
+  });
+  const verify = useMutation({
+    mutationFn: (id: string) => api.verify(id, "Local Analyst"),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["evidence", caseId] });
+      setToast("Integrity verification completed");
+    },
+  });
+  const review = useMutation({
+    mutationFn: (id: string) =>
+      api.reviewEvidence(id, "reviewed", "Local Analyst"),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["evidence", caseId] });
+      setToast("Evidence marked reviewed");
+    },
+  });
+  const remove = useMutation({
+    mutationFn: () => api.deleteEvidence(deleteTarget!.id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["evidence", caseId] });
+      setSelectedId(null);
+      setDeleteTarget(null);
+      setToast("Evidence file deleted");
+    },
+  });
+  const columns = useMemo<ColumnDef<Evidence>[]>(
+    () => [
+      {
+        id: "thumb",
+        header: "",
+        cell: ({ row }) => (
+          <img
+            className="table-thumb"
+            src={`/api/v1/evidence/${row.original.id}/thumbnail`}
+            alt=""
+          />
+        ),
+      },
+      {
+        accessorKey: "evidence_id",
+        header: "Evidence",
+        cell: ({ row }) => (
+          <div className="identity-cell">
+            <strong>{row.original.evidence_id}</strong>
+            <span>{row.original.original_filename}</span>
+          </div>
+        ),
+      },
+      {
+        id: "timestamp",
+        accessorFn: (row) =>
+          row.metadata.timeline_timestamp_utc ??
+          row.metadata.timeline_timestamp_raw ??
+          "",
+        header: "Selected timestamp",
+        cell: ({ row }) => (
+          <div className="stack-cell">
+            <span>
+              {formatDate(
+                row.original.metadata.timeline_timestamp_utc ??
+                  row.original.metadata.timeline_timestamp_raw,
+              )}
+            </span>
+            <small>
+              {row.original.metadata.timeline_timestamp_source.replaceAll(
+                "_",
+                " ",
+              )}{" "}
+              · {row.original.metadata.timeline_timestamp_confidence}
+            </small>
+          </div>
+        ),
+      },
+      {
+        id: "camera",
+        accessorFn: (row) =>
+          [row.metadata.camera_make, row.metadata.camera_model]
+            .filter(Boolean)
+            .join(" "),
+        header: "Camera",
+        cell: ({ row }) => (
+          <div className="stack-cell">
+            <span>
+              {[
+                row.original.metadata.camera_make,
+                row.original.metadata.camera_model,
+              ]
+                .filter(Boolean)
+                .join(" ") || "Not reported"}
+            </span>
+            <small>
+              {row.original.metadata.lens_model || "Lens unavailable"}
+            </small>
+          </div>
+        ),
+      },
+      {
+        id: "gps",
+        accessorFn: (row) => (row.metadata.gps_latitude !== null ? 1 : 0),
+        header: "GPS",
+        cell: ({ row }) =>
+          row.original.metadata.gps_latitude !== null ? (
+            <span className="inline-icon">
+              <MapPin size={14} />
+              Available
+            </span>
+          ) : (
+            <span className="muted">None</span>
+          ),
+      },
+      {
+        accessorKey: "integrity_status",
+        header: "Integrity",
+        cell: ({ getValue }) => <Status value={String(getValue())} />,
+      },
+      {
+        id: "findings",
+        accessorFn: (row) => row.finding_count,
+        header: "Findings",
+        cell: ({ row }) => (
+          <span>
+            {row.original.finding_count}
+            {row.original.highest_severity && (
+              <>
+                {" "}
+                · <Status value={row.original.highest_severity} />
+              </>
+            )}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "review_status",
+        header: "Review",
+        cell: ({ getValue }) => <Status value={String(getValue())} />,
+      },
+    ],
+    [],
+  );
+  const table = useReactTable({
+    data: items,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+  const rows = table.getRowModel().rows;
+  const virtual = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 58,
+    overscan: 8,
+  });
+  const visible = virtual.getVirtualItems();
+  const before = visible[0]?.start ?? 0;
+  const after = virtual.getTotalSize() - (visible.at(-1)?.end ?? 0);
+  const move = (delta: number) => {
+    const index = items.findIndex((item) => item.id === selectedId);
+    const next = items[Math.max(0, Math.min(items.length - 1, index + delta))];
+    if (next) setSelectedId(next.id);
+  };
+  const cycleView = () =>
+    setActiveView(
+      (current) =>
+        views[
+          (views.indexOf(current as (typeof views)[number]) + 1) % views.length
+        ] ?? "All evidence",
+    );
+  const cycleSort = () =>
+    setSorting((current) =>
+      current[0]?.id !== "timestamp"
+        ? [{ id: "timestamp", desc: false }]
+        : current[0].desc
+          ? []
+          : [{ id: "timestamp", desc: true }],
+    );
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === "/" && document.activeElement?.tagName !== "INPUT") {
+        event.preventDefault();
+        document.getElementById("evidence-search")?.focus();
+      }
+      if (event.key === "j") move(1);
+      if (event.key === "k") move(-1);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  });
+  return (
+    <div className="workspace evidence-workspace">
+      <div className="workspace-heading compact">
+        <div>
+          <p className="eyebrow">EVIDENCE WORKSPACE</p>
+          <h1>Inventory & inspection</h1>
+        </div>
+        <Button icon={FileUp} onClick={() => setUploadOpen(true)}>
+          Add evidence
+        </Button>
+      </div>
+      <div className="evidence-toolbar">
+        <label className="search-box">
+          <Search size={17} />
+          <input
+            id="evidence-search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search ID or filename"
+          />
+          <kbd>/</kbd>
+        </label>
+        <button
+          className="tool-button"
+          onClick={cycleView}
+          title={`Current view: ${activeView}`}
+        >
+          <Filter size={16} />
+          {activeView}
+        </button>
+        <button
+          className="tool-button"
+          onClick={cycleSort}
+          title="Cycle selected-timestamp sorting"
+        >
+          <ArrowDownUp size={16} />
+          {sorting[0]?.id === "timestamp"
+            ? sorting[0].desc
+              ? "Newest"
+              : "Oldest"
+            : "Sort"}
+        </button>
+        <span>
+          {items.length} of {query.data?.total ?? 0} items
+        </span>
+      </div>
+      {query.isLoading ? (
+        <Loading />
+      ) : query.error ? (
+        <ErrorState message={query.error.message} />
+      ) : allItems.length === 0 ? (
+        <Empty
+          title={search ? "No matching evidence" : "No evidence registered"}
+          body={
+            search
+              ? "Try a different ID or filename."
+              : "Upload a batch to validate image content, preserve originals, calculate acquisition hashes, and extract metadata."
+          }
+          action={
+            !search ? (
+              <Button icon={FileUp} onClick={() => setUploadOpen(true)}>
+                Add evidence
+              </Button>
+            ) : undefined
+          }
+        />
+      ) : (
+        <div className="evidence-layout">
+          <aside className="filter-rail">
+            <p className="eyebrow">SAVED VIEWS</p>
+            {views.map((label) => (
+              <button
+                onClick={() => setActiveView(label)}
+                className={activeView === label ? "active" : ""}
+                aria-pressed={activeView === label}
+                key={label}
+              >
+                {label}
+                <span>
+                  {label === "All evidence"
+                    ? allItems.length
+                    : label === "Needs review"
+                      ? allItems.filter((i) => i.review_status !== "reviewed")
+                          .length
+                      : label === "GPS available"
+                        ? allItems.filter(
+                            (i) => i.metadata.gps_latitude !== null,
+                          ).length
+                        : allItems.filter(
+                            (i) => i.integrity_status === "mismatch",
+                          ).length}
+                </span>
+              </button>
+            ))}
+          </aside>
+          <div className="table-scroll" ref={scrollRef}>
+            <table className="evidence-table">
+              <thead>
+                {table.getHeaderGroups().map((group) => (
+                  <tr key={group.id}>
+                    {group.headers.map((header) => (
+                      <th key={header.id}>
+                        <button
+                          onClick={header.column.getToggleSortingHandler()}
+                        >
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                        </button>
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {before > 0 && (
+                  <tr aria-hidden="true">
+                    <td style={{ height: before }} colSpan={8} />
+                  </tr>
+                )}
+                {visible.map((item) => {
+                  const row = rows[item.index];
+                  if (!row) return null;
+                  return (
+                    <tr
+                      key={row.id}
+                      className={
+                        row.original.id === selectedId ? "selected" : ""
+                      }
+                      onClick={() => setSelectedId(row.original.id)}
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") setSelectedId(row.original.id);
+                      }}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <td key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+                {after > 0 && (
+                  <tr aria-hidden="true">
+                    <td style={{ height: after }} colSpan={8} />
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <EvidenceInspector
+            item={selected}
+            onPrevious={() => move(-1)}
+            onNext={() => move(1)}
+            onVerify={() => selected && verify.mutate(selected.id)}
+            onReview={() => selected && review.mutate(selected.id)}
+            onDelete={() => selected && setDeleteTarget(selected)}
+          />
+        </div>
+      )}
+      <Modal
+        open={uploadOpen}
+        onOpenChange={setUploadOpen}
+        title="Add evidence"
+        description="Accepted images are copied into controlled storage and never modified by product code."
+      >
+        <div className="upload-zone">
+          <input
+            id="file-upload"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/tiff"
+            multiple
+            onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+          />
+          <label htmlFor="file-upload">
+            <FileUp size={25} />
+            <strong>Select image files</strong>
+            <span>JPEG, PNG, WebP, or TIFF · up to 100 MiB each</span>
+          </label>
+        </div>
+        {files.length > 0 && (
+          <div className="file-queue">
+            <strong>{files.length} selected</strong>
+            {files.slice(0, 5).map((file) => (
+              <span key={file.name}>
+                {file.name}
+                <small>{formatBytes(file.size)}</small>
+              </span>
+            ))}
+          </div>
+        )}
+        {upload.error && <ErrorState message={upload.error.message} />}
+        <div className="dialog-actions">
+          <Button variant="secondary" onClick={() => setUploadOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            disabled={!files.length || upload.isPending}
+            onClick={() => upload.mutate()}
+          >
+            {upload.isPending
+              ? "Validating and preserving…"
+              : `Preserve ${files.length || ""} files`}
+          </Button>
+        </div>
+      </Modal>
+      <Modal
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open && !remove.isPending) setDeleteTarget(null);
+        }}
+        title={`Delete ${deleteTarget?.evidence_id ?? "evidence"}?`}
+        description="This permanently removes the original file, thumbnail, metadata, linked findings, notes, and custody events from local storage."
+      >
+        <div className="dialog-actions">
+          <Button
+            variant="secondary"
+            disabled={remove.isPending}
+            onClick={() => setDeleteTarget(null)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            disabled={remove.isPending}
+            onClick={() => remove.mutate()}
+            icon={Trash2}
+          >
+            {remove.isPending ? "Deleting…" : "Delete permanently"}
+          </Button>
+        </div>
+      </Modal>
+      {toast && <Toast message={toast} onClose={() => setToast("")} />}
+    </div>
+  );
 }
 
-function EvidenceInspector({item,onPrevious,onNext,onVerify,onReview}:{item:Evidence|null;onPrevious:()=>void;onNext:()=>void;onVerify:()=>void;onReview:()=>void}){const notes=useQuery({queryKey:["notes",item?.id],queryFn:()=>api.notes(item!.id),enabled:!!item});const queryClient=useQueryClient();const [note,setNote]=useState("");const add=useMutation({mutationFn:()=>api.addNote(item!.id,"Local Analyst",note),onSuccess:()=>{setNote("");void queryClient.invalidateQueries({queryKey:["notes",item?.id]})}});if(!item)return <aside className="inspector"><Empty title="Select evidence" body="Choose an item to inspect its normalized and raw metadata."/></aside>;return <aside className="inspector"><div className="inspector-head"><div><p className="eyebrow">{item.evidence_id}</p><h2 title={item.original_filename}>{item.original_filename}</h2></div><div className="prev-next"><button onClick={onPrevious} aria-label="Previous evidence"><ChevronLeft/></button><button onClick={onNext} aria-label="Next evidence"><ChevronRight/></button></div></div><img className="inspector-preview" src={`/api/v1/evidence/${item.id}/thumbnail`} alt={`Preview of ${item.original_filename}`}/><div className="inspector-links"><Link to={`../timeline?evidence=${item.id}`}>Timeline</Link>{item.metadata.gps_latitude!==null&&<Link to={`../map?evidence=${item.id}`}>Map marker</Link>}<Link to={`../findings?evidence=${item.id}`}>Findings</Link></div><Tabs.Root defaultValue="summary"><Tabs.List className="tabs"><Tabs.Trigger value="summary">Summary</Tabs.Trigger><Tabs.Trigger value="metadata">Metadata</Tabs.Trigger><Tabs.Trigger value="raw">Raw</Tabs.Trigger><Tabs.Trigger value="custody">Custody</Tabs.Trigger><Tabs.Trigger value="notes">Notes</Tabs.Trigger></Tabs.List><Tabs.Content value="summary"><dl className="detail-list"><dt>Selected time</dt><dd>{formatDate(item.metadata.timeline_timestamp_utc??item.metadata.timeline_timestamp_raw)}<small>{item.metadata.timeline_timestamp_source.replaceAll("_"," ")} · {item.metadata.timeline_timestamp_confidence} confidence · {item.metadata.timeline_timezone_status.replaceAll("_"," ")}</small></dd><dt>Integrity</dt><dd><Status value={item.integrity_status}/></dd><dt>Acquisition hash</dt><dd className="hash">{item.sha256_acquisition}</dd><dt>Dimensions</dt><dd>{item.width} × {item.height}</dd><dt>Size</dt><dd>{formatBytes(item.file_size)}</dd></dl><div className="inspector-actions"><Button variant="secondary" icon={ShieldCheck} onClick={onVerify}>Verify integrity</Button>{item.review_status!=="reviewed"&&<Button variant="secondary" icon={Check} onClick={onReview}>Mark reviewed</Button>}</div></Tabs.Content><Tabs.Content value="metadata"><section className="metadata-group"><h3>Capture</h3><dl className="detail-list"><dt>Original value</dt><dd>{item.metadata.datetime_original_raw||"Not available"}</dd><dt>Selection reason</dt><dd>{item.metadata.timestamp_selection_reason}</dd></dl></section><section className="metadata-group"><h3>Location</h3><dl className="detail-list"><dt>GPS</dt><dd>{item.metadata.gps_latitude===null?"No GPS metadata is available.":`${item.metadata.gps_latitude.toFixed(5)}, ${item.metadata.gps_longitude?.toFixed(5)}`}</dd></dl></section><section className="metadata-group"><h3>Camera & software</h3><dl className="detail-list"><dt>Camera</dt><dd>{[item.metadata.camera_make,item.metadata.camera_model].filter(Boolean).join(" ")||"Not reported"}</dd><dt>Lens</dt><dd>{item.metadata.lens_model||"Not reported"}</dd><dt>Software tag</dt><dd>{item.metadata.software||"Not reported"}</dd></dl></section></Tabs.Content><Tabs.Content value="raw"><pre className="raw-data">{JSON.stringify(item.metadata.raw_metadata,null,2)}</pre></Tabs.Content><Tabs.Content value="custody"><p className="quiet-copy">Open the case custody log for the full append-only history.</p><Link className="text-link" to="../custody">View custody events →</Link></Tabs.Content><Tabs.Content value="notes"><div className="note-form"><textarea rows={3} value={note} onChange={e=>setNote(e.target.value)} placeholder="Add qualified review context"/><Button disabled={!note.trim()||add.isPending} onClick={()=>add.mutate()}>Add note</Button></div>{notes.data?.map(entry=><article className="note" key={entry.id}><p>{entry.body}</p><small>{entry.actor} · {formatDate(entry.created_at)}</small></article>)}</Tabs.Content></Tabs.Root></aside>}
+function EvidenceInspector({
+  item,
+  onPrevious,
+  onNext,
+  onVerify,
+  onReview,
+  onDelete,
+}: {
+  item: Evidence | null;
+  onPrevious: () => void;
+  onNext: () => void;
+  onVerify: () => void;
+  onReview: () => void;
+  onDelete: () => void;
+}) {
+  const notes = useQuery({
+    queryKey: ["notes", item?.id],
+    queryFn: () => api.notes(item!.id),
+    enabled: !!item,
+  });
+  const queryClient = useQueryClient();
+  const [note, setNote] = useState("");
+  const add = useMutation({
+    mutationFn: () => api.addNote(item!.id, "Local Analyst", note),
+    onSuccess: () => {
+      setNote("");
+      void queryClient.invalidateQueries({ queryKey: ["notes", item?.id] });
+    },
+  });
+  if (!item)
+    return (
+      <aside className="inspector">
+        <Empty
+          title="Select evidence"
+          body="Choose an item to inspect its normalized and raw metadata."
+        />
+      </aside>
+    );
+  return (
+    <aside className="inspector">
+      <div className="inspector-head">
+        <div>
+          <p className="eyebrow">{item.evidence_id}</p>
+          <h2 title={item.original_filename}>{item.original_filename}</h2>
+        </div>
+        <div className="prev-next">
+          <button onClick={onPrevious} aria-label="Previous evidence">
+            <ChevronLeft />
+          </button>
+          <button onClick={onNext} aria-label="Next evidence">
+            <ChevronRight />
+          </button>
+        </div>
+      </div>
+      <img
+        className="inspector-preview"
+        src={`/api/v1/evidence/${item.id}/thumbnail`}
+        alt={`Preview of ${item.original_filename}`}
+      />
+      <div className="inspector-links">
+        <Link to={`../timeline?evidence=${item.id}`}>Timeline</Link>
+        {item.metadata.gps_latitude !== null && (
+          <Link to={`../map?evidence=${item.id}`}>Map marker</Link>
+        )}
+        <Link to={`../findings?evidence=${item.id}`}>Findings</Link>
+      </div>
+      <Tabs.Root defaultValue="summary">
+        <Tabs.List className="tabs">
+          <Tabs.Trigger value="summary">Summary</Tabs.Trigger>
+          <Tabs.Trigger value="metadata">Metadata</Tabs.Trigger>
+          <Tabs.Trigger value="raw">Raw</Tabs.Trigger>
+          <Tabs.Trigger value="custody">Custody</Tabs.Trigger>
+          <Tabs.Trigger value="notes">Notes</Tabs.Trigger>
+        </Tabs.List>
+        <Tabs.Content value="summary">
+          <dl className="detail-list">
+            <dt>Selected time</dt>
+            <dd>
+              {formatDate(
+                item.metadata.timeline_timestamp_utc ??
+                  item.metadata.timeline_timestamp_raw,
+              )}
+              <small>
+                {item.metadata.timeline_timestamp_source.replaceAll("_", " ")} ·{" "}
+                {item.metadata.timeline_timestamp_confidence} confidence ·{" "}
+                {item.metadata.timeline_timezone_status.replaceAll("_", " ")}
+              </small>
+            </dd>
+            <dt>Integrity</dt>
+            <dd>
+              <Status value={item.integrity_status} />
+            </dd>
+            <dt>Acquisition hash</dt>
+            <dd className="hash">{item.sha256_acquisition}</dd>
+            <dt>Dimensions</dt>
+            <dd>
+              {item.width} × {item.height}
+            </dd>
+            <dt>Size</dt>
+            <dd>{formatBytes(item.file_size)}</dd>
+          </dl>
+          <div className="inspector-actions">
+            <Button variant="secondary" icon={ShieldCheck} onClick={onVerify}>
+              Verify integrity
+            </Button>
+            {item.review_status !== "reviewed" && (
+              <Button variant="secondary" icon={Check} onClick={onReview}>
+                Mark reviewed
+              </Button>
+            )}
+            <Button variant="danger" icon={Trash2} onClick={onDelete}>
+              Delete evidence
+            </Button>
+          </div>
+        </Tabs.Content>
+        <Tabs.Content value="metadata">
+          <section className="metadata-group">
+            <h3>Capture</h3>
+            <dl className="detail-list">
+              <dt>Original value</dt>
+              <dd>{item.metadata.datetime_original_raw || "Not available"}</dd>
+              <dt>Selection reason</dt>
+              <dd>{item.metadata.timestamp_selection_reason}</dd>
+            </dl>
+          </section>
+          <section className="metadata-group">
+            <h3>Location</h3>
+            <dl className="detail-list">
+              <dt>GPS</dt>
+              <dd>
+                {item.metadata.gps_latitude === null
+                  ? "No GPS metadata is available."
+                  : `${item.metadata.gps_latitude.toFixed(5)}, ${item.metadata.gps_longitude?.toFixed(5)}`}
+              </dd>
+            </dl>
+          </section>
+          <section className="metadata-group">
+            <h3>Camera & software</h3>
+            <dl className="detail-list">
+              <dt>Camera</dt>
+              <dd>
+                {[item.metadata.camera_make, item.metadata.camera_model]
+                  .filter(Boolean)
+                  .join(" ") || "Not reported"}
+              </dd>
+              <dt>Lens</dt>
+              <dd>{item.metadata.lens_model || "Not reported"}</dd>
+              <dt>Software tag</dt>
+              <dd>{item.metadata.software || "Not reported"}</dd>
+            </dl>
+          </section>
+        </Tabs.Content>
+        <Tabs.Content value="raw">
+          <pre className="raw-data">
+            {JSON.stringify(item.metadata.raw_metadata, null, 2)}
+          </pre>
+        </Tabs.Content>
+        <Tabs.Content value="custody">
+          <p className="quiet-copy">
+            Open the case custody log for the full append-only history.
+          </p>
+          <Link className="text-link" to="../custody">
+            View custody events →
+          </Link>
+        </Tabs.Content>
+        <Tabs.Content value="notes">
+          <div className="note-form">
+            <textarea
+              rows={3}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Add qualified review context"
+            />
+            <Button
+              disabled={!note.trim() || add.isPending}
+              onClick={() => add.mutate()}
+            >
+              Add note
+            </Button>
+          </div>
+          {notes.data?.map((entry) => (
+            <article className="note" key={entry.id}>
+              <p>{entry.body}</p>
+              <small>
+                {entry.actor} · {formatDate(entry.created_at)}
+              </small>
+            </article>
+          ))}
+        </Tabs.Content>
+      </Tabs.Root>
+    </aside>
+  );
+}

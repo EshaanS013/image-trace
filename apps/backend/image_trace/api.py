@@ -1,10 +1,11 @@
 import json
+from contextlib import suppress
 from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -126,6 +127,50 @@ def create_case(payload: CaseCreate, db: Db) -> Case:
     return case
 
 
+@router.delete("/cases/{case_id}", status_code=204)
+def delete_case(case_id: str, db: Db) -> None:
+    """Permanently remove a case, its evidence, reports, and audit records."""
+    case = require(db, Case, case_id)
+    evidence = list(db.scalars(select(EvidenceFile).where(EvidenceFile.case_id == case_id)))
+    evidence_ids = [item.id for item in evidence]
+    runs = list(db.scalars(select(AnalysisRun).where(AnalysisRun.case_id == case_id)))
+    run_ids = [run.id for run in runs]
+    findings = list(
+        db.scalars(
+            select(Finding).where(
+                (Finding.analysis_run_id.in_(run_ids))
+                | Finding.evidence_file_id.in_(evidence_ids)
+                | Finding.related_evidence_file_id.in_(evidence_ids)
+            )
+        )
+    ) if run_ids or evidence_ids else []
+    finding_ids = [finding.id for finding in findings]
+    reports = list(db.scalars(select(GeneratedReport).where(GeneratedReport.case_id == case_id)))
+    for item in evidence:
+        for key in (item.storage_key, f"derivatives/{case_id}/{item.evidence_id}/thumbnail.webp"):
+            with suppress(OSError, ValueError):
+                storage.resolve(key).unlink(missing_ok=True)
+    for report in reports:
+        for key in (report.storage_key, report.manifest_storage_key):
+            with suppress(OSError, ValueError):
+                storage.resolve(key).unlink(missing_ok=True)
+    if finding_ids:
+        db.execute(delete(FindingReviewEvent).where(FindingReviewEvent.finding_id.in_(finding_ids)))
+    if evidence_ids:
+        db.execute(delete(EvidenceNote).where(EvidenceNote.evidence_file_id.in_(evidence_ids)))
+        db.execute(delete(CustodyEvent).where(CustodyEvent.evidence_file_id.in_(evidence_ids)))
+    db.execute(delete(GeneratedReport).where(GeneratedReport.case_id == case_id))
+    if finding_ids:
+        db.execute(delete(Finding).where(Finding.id.in_(finding_ids)))
+    db.execute(delete(Job).where(Job.case_id == case_id))
+    if run_ids:
+        db.execute(delete(AnalysisRun).where(AnalysisRun.id.in_(run_ids)))
+    if evidence_ids:
+        db.execute(delete(EvidenceFile).where(EvidenceFile.id.in_(evidence_ids)))
+    db.delete(case)
+    db.commit()
+
+
 @router.get("/cases", response_model=None)
 def list_cases(
     db: Db,
@@ -206,6 +251,31 @@ def upload_evidence(
     job.error_summary = f"{len(failures)} file(s) failed" if failures else None
     db.commit()
     return {"job_id": job.id, "accepted": accepted, "failures": failures}
+
+
+@router.delete("/evidence/{evidence_id}", status_code=204)
+def delete_evidence(evidence_id: str, db: Db) -> None:
+    """Permanently remove one evidence file and its derived audit records."""
+    item = require(db, EvidenceFile, evidence_id)
+    findings = list(
+        db.scalars(
+            select(Finding).where(
+                (Finding.evidence_file_id == evidence_id)
+                | (Finding.related_evidence_file_id == evidence_id)
+            )
+        )
+    )
+    finding_ids = [finding.id for finding in findings]
+    for key in (item.storage_key, f"derivatives/{item.case_id}/{item.evidence_id}/thumbnail.webp"):
+        with suppress(OSError, ValueError):
+            storage.resolve(key).unlink(missing_ok=True)
+    if finding_ids:
+        db.execute(delete(FindingReviewEvent).where(FindingReviewEvent.finding_id.in_(finding_ids)))
+        db.execute(delete(Finding).where(Finding.id.in_(finding_ids)))
+    db.execute(delete(EvidenceNote).where(EvidenceNote.evidence_file_id == evidence_id))
+    db.execute(delete(CustodyEvent).where(CustodyEvent.evidence_file_id == evidence_id))
+    db.delete(item)
+    db.commit()
 
 
 @router.get("/cases/{case_id}/evidence")
