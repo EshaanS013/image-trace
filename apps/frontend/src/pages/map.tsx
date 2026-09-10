@@ -30,18 +30,58 @@ export function MapPage() {
   const points = useMemo(() => query.data?.points ?? [], [query.data?.points]);
   const plotted = useMemo(() => {
     if (!points.length) return [];
+    const sorted = (values: number[]) => [...values].sort((a, b) => a - b);
     const lats = points.map((p) => p.latitude),
       lons = points.map((p) => p.longitude);
-    const minLat = Math.min(...lats),
-      maxLat = Math.max(...lats),
-      minLon = Math.min(...lons),
-      maxLon = Math.max(...lons);
+    const median = (values: number[]) => {
+      const ordered = sorted(values);
+      return ordered[Math.floor(ordered.length / 2)] ?? 0;
+    };
+    const medianLat = median(lats),
+      medianLon = median(lons);
+    const hasWideJump =
+      Math.max(...lats) - Math.min(...lats) > 10 ||
+      Math.max(...lons) - Math.min(...lons) > 10;
+    // Keep the main route readable when one or more frames are thousands of
+    // kilometres away. Those points are clamped to the edge and marked as
+    // review jumps instead of shrinking the local route into a line.
+    const focus = hasWideJump
+      ? points.filter(
+          (point) =>
+            Math.abs(point.latitude - medianLat) <= 5 &&
+            Math.abs(point.longitude - medianLon) <= 5,
+        )
+      : points;
+    const focusLats = focus.map((p) => p.latitude),
+      focusLons = focus.map((p) => p.longitude);
+    const minLat = Math.min(...focusLats),
+      maxLat = Math.max(...focusLats),
+      minLon = Math.min(...focusLons),
+      maxLon = Math.max(...focusLons);
+    const clamp = (value: number) => Math.max(7, Math.min(93, value));
     return points.map((p) => ({
       ...p,
-      x: 10 + (80 * (p.longitude - minLon)) / (maxLon - minLon || 1),
-      y: 90 - (80 * (p.latitude - minLat)) / (maxLat - minLat || 1),
+      jump:
+        hasWideJump &&
+        (Math.abs(p.latitude - medianLat) > 5 ||
+          Math.abs(p.longitude - medianLon) > 5),
+      x: clamp(10 + (80 * (p.longitude - minLon)) / (maxLon - minLon || 1)),
+      y: clamp(90 - (80 * (p.latitude - minLat)) / (maxLat - minLat || 1)),
     }));
   }, [points]);
+  const routeSegments = useMemo(() => {
+    const segments: (typeof plotted)[] = [];
+    let current: typeof plotted = [];
+    plotted.forEach((point, index) => {
+      if (index > 0 && (point.jump || plotted[index - 1]?.jump)) {
+        if (current.length) segments.push(current);
+        current = [];
+      }
+      current.push(point);
+    });
+    if (current.length) segments.push(current);
+    return segments;
+  }, [plotted]);
   const routeKm = useMemo(
     () =>
       plotted.slice(1).reduce((total, p, index) => {
@@ -182,14 +222,17 @@ export function MapPage() {
                   stroke="var(--line-strong)"
                   strokeWidth=".65"
                 />
-                <polyline
-                  points={plotted.map((p) => `${p.x},${p.y}`).join(" ")}
-                  fill="none"
-                  stroke="var(--primary)"
-                  strokeWidth="1.1"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+                {routeSegments.map((segment, index) => (
+                  <polyline
+                    key={`route-segment-${index}`}
+                    points={segment.map((p) => `${p.x},${p.y}`).join(" ")}
+                    fill="none"
+                    stroke="var(--primary)"
+                    strokeWidth="1.1"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                ))}
                 {plotted.map((p, index) => (
                   <g
                     key={p.evidence_file_id}
@@ -197,7 +240,9 @@ export function MapPage() {
                     className={
                       p.evidence_file_id === selectedId
                         ? "marker selected"
-                        : "marker"
+                        : p.jump
+                          ? "marker outlier"
+                          : "marker"
                     }
                     tabIndex={0}
                     role="button"
@@ -227,6 +272,11 @@ export function MapPage() {
                 <span className="map-key-dot" /> Evidence route{" "}
                 <span className="map-key-warning" /> Review jump
               </div>
+              {outlier && (
+                <div className="map-overlay map-jump-note">
+                  Route break shown · distant points are clamped to the edge
+                </div>
+              )}
             </section>
             <aside className="map-legend">
               <div className="map-legend-head">

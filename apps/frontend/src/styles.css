@@ -63,6 +63,8 @@
 .map-key { right:16px; bottom:16px; }
 .map-key-dot,.map-key-warning { width:9px; height:9px; border-radius:50%; background:var(--primary); display:inline-block; }
 .map-key-warning { background:var(--review); margin-left:8px; }
+.marker.outlier circle { fill:var(--review); }
+.map-jump-note { left:18px; top:16px; color:var(--review); font-weight:700; }
 .map-compass { font-size:4px; font-weight:800; fill:var(--ink); }
 .map-legend-head { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:10px; border-bottom:1px solid var(--line); }
 .map-legend-head .eyebrow { margin-bottom:2px; }
