@@ -1,6 +1,6 @@
 # IMAGE TRACE
 
-Public project demonstration: <https://image-trace-demo.polite-tulip-8246.chatgpt.site>
+Public project demonstration: <https://image-trace-demo.eshaansarkhawas007.chatgpt.site>
 
 The full system runs locally by design. The public site is a read-only product walkthrough using synthetic screenshots; it does not accept or process evidence.
 
