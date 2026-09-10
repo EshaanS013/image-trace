@@ -1,5 +1,9 @@
 # IMAGE TRACE
 
+Public project demonstration: <https://image-trace-demo.polite-tulip-8246.chatgpt.site>
+
+The full system runs locally by design. The public site is a read-only product walkthrough using synthetic screenshots; it does not accept or process evidence.
+
 IMAGE TRACE is a local-first workspace for preserving image evidence, inspecting raw and normalized metadata, reconstructing qualified timelines and routes, reviewing explainable findings, and producing versioned PDF reports with separate SHA-256 manifests.
 
 The application is educational decision-support software. It is not a stalking tool, surveillance platform, authenticity oracle, or court-certified forensic suite. Use synthetic or consented evidence only. Missing metadata is not suspicious by itself, and metadata tags do not establish authenticity or manipulation.
@@ -87,6 +91,7 @@ The React/Vite client uses TanStack Query for server state, TanStack Table and r
 
 ## Documentation
 
+- [Project guide and system methodology](docs/IMAGE_TRACE_Project_Guide.docx)
 - [Methodology](docs/methodology.md)
 - [Threat model](docs/threat-model.md)
 - [Limitations](docs/limitations.md)
