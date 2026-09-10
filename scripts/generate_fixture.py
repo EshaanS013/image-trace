@@ -52,7 +52,10 @@ def generate() -> None:
         old.unlink()
     start = datetime(2026, 1, 15, 8, 0, tzinfo=timezone.utc)
     entries = []
-    coords: list[tuple[float, float] | None] = [(12.9716 + i * 0.005, 77.5946 + i * 0.004) for i in range(13)] + [None] * 7
+    # Every fixture carries a complete GPS block so the demo can explain a
+    # route without hidden gaps. One deliberately distant point remains to
+    # demonstrate how the analysis flags an implausible travel jump.
+    coords: list[tuple[float, float]] = [(12.9716 + i * 0.005, 77.5946 + i * 0.004) for i in range(20)]
     coords[10] = (51.5074, -0.1278)
     for index in range(20):
         name = f"synthetic-{index + 1:02d}.jpg"
@@ -64,18 +67,18 @@ def generate() -> None:
         draw.rectangle((28, 28, 612, 392), outline="white", width=4)
         draw.text((52, 54), f"SYNTHETIC EVIDENCE {index + 1:02d}", fill="white")
         draw.text((52, 340), "No person or real location is depicted", fill="white")
-        image.save(path, "JPEG", quality=91, exif=exif_bytes(index, timestamp, *(location or (None, None))))
+        image.save(path, "JPEG", quality=91, exif=exif_bytes(index, timestamp, *location))
         entries.append({"filename": name, "camera_group": "A" if index < 10 else "B", "gps_expected": location is not None,
                         "timestamp": timestamp.isoformat(), "editing_software_example": index == 4})
     shutil.copyfile(TARGET / "synthetic-02.jpg", TARGET / "synthetic-19.jpg")
     near = Image.open(TARGET / "synthetic-03.jpg"); pixels = near.load(); pixels[0, 0] = (pixels[0, 0][0] ^ 1, pixels[0, 0][1], pixels[0, 0][2]); near.save(TARGET / "synthetic-20.jpg", "JPEG", quality=91)
     entries[18].update(entries[1] | {"filename": "synthetic-19.jpg", "exact_duplicate_of": "synthetic-02.jpg"})
-    entries[19].update({"camera_group": None, "gps_expected": False, "timestamp": None, "near_duplicate_of": "synthetic-03.jpg"})
+    entries[19].update({"camera_group": "B", "gps_expected": True, "near_duplicate_of": "synthetic-03.jpg"})
     for entry in entries:
         content = (TARGET / entry["filename"]).read_bytes()
         entry["sha256"] = hashlib.sha256(content).hexdigest()
     manifest = {"generator_version": GENERATOR_VERSION, "synthetic_only": True, "coordinate_policy": "Synthetic coordinates for testing; not tied to depicted people or events.",
-                "expected": {"image_count": 20, "gps_count": 14, "camera_groups": 2, "editing_software_examples": 1,
+                "expected": {"image_count": 20, "gps_count": 20, "camera_groups": 2, "editing_software_examples": 1,
                              "implausible_transition": ["synthetic-10.jpg", "synthetic-11.jpg"], "exact_duplicate": ["synthetic-02.jpg", "synthetic-19.jpg"],
                              "near_duplicate": ["synthetic-03.jpg", "synthetic-20.jpg"], "timestamp_discrepancy": "synthetic-06.jpg", "minimum_finding_rules": ["TIMESTAMP_SOURCE_FALLBACK", "TIMESTAMP_DISCREPANCY", "EDITING_SOFTWARE_PRESENT", "IMPLAUSIBLE_TRAVEL", "MISSING_GPS", "CAMERA_SOURCE_CHANGE"]},
                 "files": entries}
