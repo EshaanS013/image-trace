@@ -71,7 +71,7 @@ def generate() -> None:
         entries.append({"filename": name, "camera_group": "A" if index < 10 else "B", "gps_expected": location is not None,
                         "timestamp": timestamp.isoformat(), "editing_software_example": index == 4})
     shutil.copyfile(TARGET / "synthetic-02.jpg", TARGET / "synthetic-19.jpg")
-    near = Image.open(TARGET / "synthetic-03.jpg"); pixels = near.load(); pixels[0, 0] = (pixels[0, 0][0] ^ 1, pixels[0, 0][1], pixels[0, 0][2]); near.save(TARGET / "synthetic-20.jpg", "JPEG", quality=91)
+    near = Image.open(TARGET / "synthetic-03.jpg"); pixels = near.load(); pixels[0, 0] = (pixels[0, 0][0] ^ 1, pixels[0, 0][1], pixels[0, 0][2]); near.save(TARGET / "synthetic-20.jpg", "JPEG", quality=91, exif=exif_bytes(19, start + timedelta(minutes=19 * 15), *coords[19]))
     entries[18].update(entries[1] | {"filename": "synthetic-19.jpg", "exact_duplicate_of": "synthetic-02.jpg"})
     entries[19].update({"camera_group": "B", "gps_expected": True, "near_duplicate_of": "synthetic-03.jpg"})
     for entry in entries:
